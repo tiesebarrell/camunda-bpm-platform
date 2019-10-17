@@ -33,6 +33,12 @@ public class CompetingLicenseKeyAccessTest extends ConcurrencyTestCase {
     managementService.setLicenseKey("testLicenseKey");
   }
 
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    managementService.deleteLicenseKey();
+  }
+
   /**
    * thread1:
    *  t=1: fetch license key
