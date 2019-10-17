@@ -28,6 +28,7 @@ import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.test.util.ProcessEngineTestRule;
 import org.camunda.bpm.engine.test.util.ProvidedProcessEngineRule;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,6 +52,11 @@ public class LicenseKeyDirtyDbTest {
     processEngineConfiguration = (ProcessEngineConfigurationImpl) processEngine.getProcessEngineConfiguration();
     managementService = processEngine.getManagementService();
     managementService.setLicenseKey("license");
+  }
+
+  @AfterClass
+  public static void cleanup() {
+    new ProvidedProcessEngineRule().getProcessEngine().getManagementService().deleteLicenseKey();
   }
 
   @Test
