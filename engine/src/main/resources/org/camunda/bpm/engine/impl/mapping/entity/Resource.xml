@@ -55,16 +55,16 @@
   </delete>
 
   <delete id="deleteLicenseResource" parameterType="map">
-    delete from ${prefix}ACT_GE_BYTEARRAY B 
-    where B.ID_ IN 
+    delete from ${prefix}ACT_GE_BYTEARRAY 
+    where ID_ IN 
       (select P.VALUE_ from ${prefix}ACT_GE_PROPERTY P 
       where P.NAME_ = #{license-id} 
       and P.REV_ = #{property-revision});
   </delete>
 
   <delete id="purgeTablePreserveLicenseKey" parameterType="map">
-    delete from ${prefix}ACT_GE_BYTEARRAY B 
-    where B.ID_ NOT IN 
+    delete from ${prefix}ACT_GE_BYTEARRAY 
+    where ID_ NOT IN 
       (select P.VALUE_ from ${prefix}ACT_GE_PROPERTY P 
       where P.NAME_ = #{license-id} 
       and P.REV_ = #{property-revision});
