@@ -59,7 +59,7 @@
     where ID_ IN 
       (select P.VALUE_ from ${prefix}ACT_GE_PROPERTY P 
       where P.NAME_ = #{license-id} 
-      and P.REV_ = #{property-revision});
+      and P.REV_ = #{property-revision})
   </delete>
 
   <delete id="purgeTablePreserveLicenseKey" parameterType="map">
@@ -67,7 +67,7 @@
     where ID_ NOT IN 
       (select P.VALUE_ from ${prefix}ACT_GE_PROPERTY P 
       where P.NAME_ = #{license-id} 
-      and P.REV_ = #{property-revision});
+      and P.REV_ = #{property-revision})
   </delete>
   
   <!-- RESOURCE RESULTMAP -->
