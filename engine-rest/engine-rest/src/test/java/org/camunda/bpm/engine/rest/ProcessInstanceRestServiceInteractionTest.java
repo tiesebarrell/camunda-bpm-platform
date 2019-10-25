@@ -196,6 +196,7 @@ public class ProcessInstanceRestServiceInteractionTest extends
         .body("activityName", equalTo(EXAMPLE_ACTIVITY_NAME))
         // "name" is deprecated and there for legacy reasons
         .body("name", equalTo(EXAMPLE_ACTIVITY_NAME))
+        .body("incidentIds", empty())
         .body("childActivityInstances", not(empty()))
         .body("childActivityInstances[0].id", equalTo(CHILD_EXAMPLE_ACTIVITY_INSTANCE_ID))
         .body("childActivityInstances[0].parentActivityInstanceId", equalTo(CHILD_EXAMPLE_PARENT_ACTIVITY_INSTANCE_ID))
@@ -208,6 +209,8 @@ public class ProcessInstanceRestServiceInteractionTest extends
         .body("childActivityInstances[0].executionIds", not(empty()))
         .body("childActivityInstances[0].childActivityInstances", empty())
         .body("childActivityInstances[0].childTransitionInstances", empty())
+        .body("childActivityInstances[0].incidentIds", not(empty()))
+        .body("childActivityInstances[0].incidentIds[0]", equalTo(EXAMPLE_INCIDENT_ID))
         .body("childTransitionInstances", not(empty()))
         .body("childTransitionInstances[0].id", equalTo(CHILD_EXAMPLE_ACTIVITY_INSTANCE_ID))
         .body("childTransitionInstances[0].parentActivityInstanceId", equalTo(CHILD_EXAMPLE_PARENT_ACTIVITY_INSTANCE_ID))
@@ -220,7 +223,7 @@ public class ProcessInstanceRestServiceInteractionTest extends
         .body("childTransitionInstances[0].executionId", equalTo(EXAMPLE_EXECUTION_ID))
         .when().get(PROCESS_INSTANCE_ACTIVIY_INSTANCES_URL);
 
-    Assert.assertEquals("Should return right number of properties", 11, response.jsonPath().getMap("").size());
+    Assert.assertEquals("Should return right number of properties", 12, response.jsonPath().getMap("").size());
   }
 
   @Test

@@ -40,6 +40,7 @@ public class ActivityInstanceImpl extends ProcessElementInstanceImpl implements 
   protected TransitionInstance[] childTransitionInstances = new TransitionInstance[0];
 
   protected String[] executionIds = new String[0];
+  protected String[] incidentIds = new String[0];
 
   public ActivityInstance[] getChildActivityInstances() {
     return childActivityInstances;
@@ -95,6 +96,14 @@ public class ActivityInstanceImpl extends ProcessElementInstanceImpl implements 
 
   public void setActivityName(String activityName) {
     this.activityName = activityName;
+  }
+
+  public String[] getIncidentIds() {
+    return incidentIds;
+  }
+
+  public void setIncidentIds(String[] incidentIds) {
+    this.incidentIds = incidentIds;
   }
 
   protected void writeTree(StringWriter writer, String prefix, boolean isTail) {

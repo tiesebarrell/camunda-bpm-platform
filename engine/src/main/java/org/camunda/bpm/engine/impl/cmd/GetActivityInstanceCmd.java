@@ -31,6 +31,7 @@ import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.persistence.entity.ActivityInstanceImpl;
 import org.camunda.bpm.engine.impl.persistence.entity.ExecutionEntity;
+import org.camunda.bpm.engine.impl.persistence.entity.IncidentEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.TransitionInstanceImpl;
 import org.camunda.bpm.engine.impl.pvm.process.ActivityImpl;
 import org.camunda.bpm.engine.impl.pvm.process.ScopeImpl;
@@ -99,11 +100,14 @@ public class GetActivityInstanceCmd implements Command<ActivityInstance> {
       processInstance,
       processInstance.getProcessDefinition(),
       processInstanceId,
+      null,
       null);
     Map<String, ActivityInstanceImpl> activityInstances = new HashMap<String, ActivityInstanceImpl>();
     activityInstances.put(processInstanceId, processActInst);
 
     Map<String, TransitionInstanceImpl> transitionInstances = new HashMap<String, TransitionInstanceImpl>();
+
+    Map<String, List<String>> map = findIncidentIdsPerActivityId(commandContext);
 
     for (ExecutionEntity leaf : leaves) {
       // skip leafs without activity, e.g. if only the process instance exists after cancellation
@@ -126,10 +130,12 @@ public class GetActivityInstanceCmd implements Command<ActivityInstance> {
               .get(leaf.getActivity().getFlowScope())
               .getParentActivityInstanceId();
 
+          String[] incidents = getIncidentList(map, leaf);
           ActivityInstanceImpl leafInstance = createActivityInstance(leaf,
               leaf.getActivity(),
               leaf.getActivityInstanceId(),
-              parentActivityInstanceId);
+              parentActivityInstanceId,
+              incidents);
           activityInstances.put(leafInstance.getId(), leafInstance);
 
           scopeInstancesToCreate.remove(leaf.getActivity());
@@ -162,6 +168,7 @@ public class GetActivityInstanceCmd implements Command<ActivityInstance> {
           continue;
         }
         else {
+          String[] incidents = getIncidentList(map, leaf);
           // regardless of the tree structure (compacted or not), the scope's activity instance id
           // is the activity instance id of the parent execution and the parent activity instance id
           // of that is the actual parent activity instance id
@@ -169,7 +176,8 @@ public class GetActivityInstanceCmd implements Command<ActivityInstance> {
               scopeExecution,
               scope,
               activityInstanceId,
-              parentActivityInstanceId);
+              parentActivityInstanceId,
+              incidents);
           activityInstances.put(activityInstanceId, scopeInstance);
         }
       }
@@ -192,7 +200,7 @@ public class GetActivityInstanceCmd implements Command<ActivityInstance> {
   }
 
   protected ActivityInstanceImpl createActivityInstance(PvmExecutionImpl scopeExecution, ScopeImpl scope,
-      String activityInstanceId, String parentActivityInstanceId) {
+      String activityInstanceId, String parentActivityInstanceId, String[] incidentIds) {
     ActivityInstanceImpl actInst = new ActivityInstanceImpl();
 
     actInst.setId(activityInstanceId);
@@ -225,6 +233,8 @@ public class GetActivityInstanceCmd implements Command<ActivityInstance> {
       }
     }
     actInst.setExecutionIds(executionIds.toArray(new String[executionIds.size()]));
+
+    actInst.setIncidentIds(incidentIds);
 
     return actInst;
   }
@@ -396,6 +406,30 @@ public class GetActivityInstanceCmd implements Command<ActivityInstance> {
       for (ExecutionEntity child : childrenOfThisExecution) {
         loadChildExecutionsFromCache(child, childExecutions);
       }
+    }
+  }
+
+  protected Map<String, List<String>> findIncidentIdsPerActivityId(CommandContext commandContext) {
+    List<IncidentEntity> incidents = commandContext.getIncidentManager().findIncidentsByProcessInstance(processInstanceId);
+    Map<String, List<String>> result = new HashMap<>();
+    for (IncidentEntity incidentEntity : incidents) {
+      String activityId = incidentEntity.getActivityId();
+      List<String> incidentIds = new ArrayList<>();
+      if (result.containsKey(activityId)) {
+        incidentIds = new ArrayList<>(result.get(activityId));
+      }
+      incidentIds.add(incidentEntity.getId());
+      result.put(activityId, incidentIds);
+    }
+    return result;
+  }
+
+  protected String[] getIncidentList(Map<String, List<String>> incidents, ExecutionEntity execution) {
+    List<String> incidentList = incidents.get(execution.getActivityId());
+    if (incidentList != null) {
+      return incidentList.toArray(new String[incidentList.size()]);
+    } else {
+      return new String[0];
     }
   }
 

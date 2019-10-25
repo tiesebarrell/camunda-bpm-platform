@@ -75,6 +75,7 @@ import org.camunda.bpm.engine.impl.util.CollectionUtil;
 import org.camunda.bpm.engine.repository.ProcessDefinition;
 import org.camunda.bpm.engine.runtime.ActivityInstance;
 import org.camunda.bpm.engine.runtime.Execution;
+import org.camunda.bpm.engine.runtime.Incident;
 import org.camunda.bpm.engine.runtime.Job;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.runtime.TransitionInstance;
@@ -1855,6 +1856,93 @@ public class RuntimeServiceTest {
     assertEquals(expectedAmount, instanceIds.size());
   }
 
+  @Test
+  @Deployment(resources={"org/camunda/bpm/engine/test/api/oneTaskProcess.bpmn20.xml"})
+  public void testActivityInstanceNoIncident() {
+    // given
+    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("oneTaskProcess");
+
+    // when
+    ActivityInstance tree = runtimeService.getActivityInstance(processInstance.getId());
+    assertNotNull(tree);
+
+    // then
+    String[] incidentIds = tree.getActivityInstances("theTask")[0].getIncidentIds();
+    assertEquals(0, incidentIds.length);
+  }
+
+  @Test
+  @Deployment(resources={"org/camunda/bpm/engine/test/api/oneTaskProcess.bpmn20.xml"})
+  public void testActivityInstanceIncident() {
+    // given
+    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("oneTaskProcess");
+    String executionId = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).active().singleResult().getId();
+    Incident incident = runtimeService.createIncident("foo", executionId, "bar");
+  
+    // when
+    ActivityInstance tree = runtimeService.getActivityInstance(processInstance.getId());
+    assertNotNull(tree);
+  
+    // then
+    String[] incidentIds = tree.getActivityInstances("theTask")[0].getIncidentIds();
+    assertEquals(1, incidentIds.length);
+    assertEquals(incident.getId(), incidentIds[0]);
+  }
+
+  @Test
+  @Deployment(resources={"org/camunda/bpm/engine/test/api/runtime/RuntimeServiceTest.testActivityInstanceTreeForConcurrentAsyncAfterTask.bpmn20.xml"})
+  public void testActivityInstanceIncidentConcurrentTasksProcess() {
+    // given
+    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("concurrentTasksProcess");
+    String executionId = runtimeService.createExecutionQuery().activityId("theTask").active().singleResult().getId();
+    Incident theTaskIncident = runtimeService.createIncident("foo", executionId, "bar");
+    
+    executionId = runtimeService.createExecutionQuery().activityId("asyncTask").active().singleResult().getId();
+    Incident asyncTaskIncident = runtimeService.createIncident("foo", executionId, "bar");
+    Incident anotherIncident = runtimeService.createIncident("foo", executionId, "bar");
+
+    // when
+    ActivityInstance tree = runtimeService.getActivityInstance(processInstance.getId());
+    assertNotNull(tree);
+
+    // then
+    String[] incidentIds = tree.getActivityInstances("theTask")[0].getIncidentIds();
+    assertEquals(1, incidentIds.length);
+    assertEquals(theTaskIncident.getId(), incidentIds[0]);
+
+    incidentIds = tree.getActivityInstances("asyncTask")[0].getIncidentIds();
+    assertEquals(2, incidentIds.length);
+    for (String incidentId : incidentIds) {
+      if (!incidentId.equals(asyncTaskIncident.getId())
+          && !incidentId.equals(anotherIncident.getId())) {
+        fail("Expected: " + asyncTaskIncident.getId() + " or " + anotherIncident.getId()
+            + " but it was " + incidentId);
+      }
+    }
+  }
+
+  @Test
+  @Deployment(resources={"org/camunda/bpm/engine/test/api/runtime/RuntimeServiceTest.testActivityInstanceForConcurrentSubprocess.bpmn20.xml"})
+  public void testActivityInstanceIncidentconcurrentSubProcess() {
+    // given
+    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("concurrentSubProcess");
+    String executionId = runtimeService.createExecutionQuery().activityId("outerTask").active().singleResult().getId();
+    Incident outerTaskIncident = runtimeService.createIncident("foo", executionId, "bar");
+    executionId = runtimeService.createExecutionQuery().activityId("innerTask").active().singleResult().getId();
+    Incident innerTaskIncident = runtimeService.createIncident("foo", executionId, "bar");
+
+    // when
+    ActivityInstance tree = runtimeService.getActivityInstance(processInstance.getId());
+    assertNotNull(tree);
+
+    // then
+    String[] incidentIds = tree.getActivityInstances("outerTask")[0].getIncidentIds();
+    assertEquals(1, incidentIds.length);
+    assertEquals(outerTaskIncident.getId(), incidentIds[0]);
+    incidentIds = tree.getActivityInstances("innerTask")[0].getIncidentIds();
+    assertEquals(1, incidentIds.length);
+    assertEquals(innerTaskIncident.getId(), incidentIds[0]);
+  }
 
   @Deployment(resources = "org/camunda/bpm/engine/test/api/oneTaskProcess.bpmn20.xml")
   @Test
