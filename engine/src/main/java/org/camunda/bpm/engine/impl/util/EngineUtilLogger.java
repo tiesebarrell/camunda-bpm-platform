@@ -29,7 +29,7 @@ import org.camunda.bpm.engine.exception.NotFoundException;
 import org.camunda.bpm.engine.impl.ProcessEngineLogger;
 import org.camunda.bpm.engine.impl.bpmn.parser.FieldDeclaration;
 import org.camunda.bpm.engine.impl.util.io.StreamSource;
-import org.camunda.bpm.engine.impl.util.xml.Problem;
+import org.camunda.bpm.engine.impl.xml.ProblemImpl;
 
 /**
  * @author Daniel Meyer
@@ -62,7 +62,7 @@ public class EngineUtilLogger extends ProcessEngineLogger {
         "Warnings during parsing: {}", formattedMessage);
   }
 
-  public ProcessEngineException exceptionDuringParsing(String string, List<Problem> errors, List<Problem> warnings) {
+  public ProcessEngineException exceptionDuringParsing(String string, List<ProblemImpl> errors, List<ProblemImpl> warnings) {
     return new ParseException(exceptionMessage(
         "005",
         "Could not parse BPMN process. Errors: {}",

@@ -27,6 +27,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.camunda.bpm.engine.BpmnParseException;
+import org.camunda.bpm.engine.Problem;
 import org.camunda.bpm.engine.impl.ProcessEngineLogger;
 import org.camunda.bpm.engine.impl.util.EngineUtilLogger;
 import org.camunda.bpm.engine.impl.util.io.InputStreamSource;
@@ -34,6 +35,7 @@ import org.camunda.bpm.engine.impl.util.io.ResourceStreamSource;
 import org.camunda.bpm.engine.impl.util.io.StreamSource;
 import org.camunda.bpm.engine.impl.util.io.StringStreamSource;
 import org.camunda.bpm.engine.impl.util.io.UrlStreamSource;
+import org.camunda.bpm.engine.impl.xml.ProblemImpl;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -59,8 +61,8 @@ public class Parse extends DefaultHandler {
   protected String name;
   protected StreamSource streamSource;
   protected Element rootElement = null;
-  protected List<Problem> errors = new ArrayList<>();
-  protected List<Problem> warnings = new ArrayList<>();
+  protected List<ProblemImpl> errors = new ArrayList<>();
+  protected List<ProblemImpl> warnings = new ArrayList<>();
   protected String schemaResource;
   protected boolean enableXxeProcessing = true;
 
@@ -186,20 +188,20 @@ public class Parse extends DefaultHandler {
     return rootElement;
   }
 
-  public List<Problem> getProblems() {
+  public List<ProblemImpl> getProblems() {
     return errors;
   }
 
   public void addError(SAXParseException e) {
-    errors.add(new Problem(e, name));
+    errors.add(new ProblemImpl(e, name));
   }
 
   public void addError(String errorMessage, Element element) {
-    errors.add(new Problem(errorMessage, name, element));
+    errors.add(new ProblemImpl(errorMessage, name, element));
   }
 
   public void addError(BpmnParseException e) {
-    errors.add(new Problem(e, name));
+    errors.add(new ProblemImpl(e, name));
   }
 
   public boolean hasErrors() {
@@ -207,11 +209,11 @@ public class Parse extends DefaultHandler {
   }
 
   public void addWarning(SAXParseException e) {
-    warnings.add(new Problem(e, name));
+    warnings.add(new ProblemImpl(e, name));
   }
 
   public void addWarning(String errorMessage, Element element) {
-    warnings.add(new Problem(errorMessage, name, element));
+    warnings.add(new ProblemImpl(errorMessage, name, element));
   }
 
   public boolean hasWarnings() {

@@ -29,6 +29,7 @@ import static org.junit.Assert.fail;
 import java.util.List;
 
 import org.camunda.bpm.engine.ActivityTypes;
+import org.camunda.bpm.engine.ParseException;
 import org.camunda.bpm.engine.ProcessEngineException;
 import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.RuntimeService;
@@ -107,8 +108,11 @@ public class BpmnParseTest {
       String resource = TestHelper.getBpmnProcessDefinitionResource(getClass(), "testInvalidSubProcessWithTimerStartEvent");
       repositoryService.createDeployment().name(resource).addClasspathResource(resource).deploy();
       fail("Exception expected: Process definition could be parsed, although the sub process contains a timer start event.");
-    } catch (ProcessEngineException e) {
+    } catch (ParseException e) {
       testRule.assertTextPresent("timerEventDefinition is not allowed on start event within a subprocess", e.getMessage());
+      assertThat(e.getErrors()).hasSize(1);
+      assertThat(e.getErrors().get(0).getBpmnElementIds()).hasSize(1);
+      assertThat(e.getErrors().get(0).getBpmnElementIds()[0]).isEqualTo("TimerEventDefinition_1");
     }
   }
 

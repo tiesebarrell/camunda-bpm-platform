@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.camunda.bpm.engine.impl.util.xml;
+package org.camunda.bpm.engine.impl.xml;
 
 import org.camunda.bpm.engine.BpmnParseException;
+import org.camunda.bpm.engine.Problem;
+import org.camunda.bpm.engine.impl.util.xml.Element;
 import org.xml.sax.SAXParseException;
 
 
@@ -24,7 +26,7 @@ import org.xml.sax.SAXParseException;
  * @author Tom Baeyens
  * @author Joram Barrez
  */
-public class Problem {
+public class ProblemImpl implements Problem {
 
   protected String errorMessage;
   protected String resource;
@@ -32,23 +34,38 @@ public class Problem {
   protected int column;
   protected String[] bpmnElementIds;
 
-  public Problem(SAXParseException e, String resource) {
+  public ProblemImpl(SAXParseException e, String resource) {
     concatenateErrorMessages(e);
     this.resource = resource;
     this.line = e.getLineNumber();
     this.column = e.getColumnNumber();
   }
+
   
-  public Problem(String errorMessage, String resourceName, Element element) {
+  public ProblemImpl(String errorMessage, String resourceName, Element element) {
+    this.errorMessage = errorMessage;
+    this.resource = resourceName;
+    if (element!=null) {
+      this.line = element.getLine();
+      this.column = element.getColumn();
+      String id = element.attribute("id");
+      if (id != null && id.length() > 0) {
+        this.bpmnElementIds = new String[]{id};
+      }
+    }
+  }
+
+  public ProblemImpl(String errorMessage, String resourceName, Element element, String... bpmnElementIds) {
     this.errorMessage = errorMessage;
     this.resource = resourceName;
     if (element!=null) {
       this.line = element.getLine();
       this.column = element.getColumn();
     }
+    this.bpmnElementIds = bpmnElementIds;
   }
 
-  public Problem(BpmnParseException exception, String resourceName) {
+  public ProblemImpl(BpmnParseException exception, String resourceName) {
     concatenateErrorMessages(exception);
     this.resource = resourceName;
     Element element = exception.getElement();
@@ -68,6 +85,33 @@ public class Problem {
       }
       throwable = throwable.getCause();
     }
+  }
+
+  // getters
+
+  @Override
+  public String getErrorMessage() {
+    return errorMessage;
+  }
+
+  @Override
+  public String getResource() {
+    return resource;
+  }
+
+  @Override
+  public int getLine() {
+    return line;
+  }
+
+  @Override
+  public int getColumn() {
+    return column;
+  }
+
+  @Override
+  public String[] getBpmnElementIds() {
+    return bpmnElementIds;
   }
 
   public String toString() {

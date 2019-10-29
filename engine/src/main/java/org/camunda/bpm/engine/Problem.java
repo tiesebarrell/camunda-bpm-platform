@@ -16,28 +16,19 @@
  */
 package org.camunda.bpm.engine;
 
-import java.util.List;
+/**
+ * Interface of a problem occurred during bpmn parsing
+ */
+public interface Problem {
 
-import org.camunda.bpm.engine.impl.xml.ProblemImpl;
+  String getErrorMessage();
 
-public class ParseException extends ProcessEngineException {
+  String getResource();
 
-  private static final long serialVersionUID = 1L;
+  int getLine();
 
-  protected List<ProblemImpl> errors;
-  protected List<ProblemImpl> warnings;
+  int getColumn();
 
-  public ParseException(String exceptionMessage, List<ProblemImpl> errors, List<ProblemImpl> warnings) {
-    super(exceptionMessage);
-    this.errors = errors;
-    this.warnings = warnings;
-  }
+  String[] getBpmnElementIds();
 
-  public List<ProblemImpl> getErrors() {
-    return errors;
-  }
-
-  public List<ProblemImpl> getWarnings() {
-    return warnings;
-  }
 }
