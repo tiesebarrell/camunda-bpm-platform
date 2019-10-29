@@ -20,8 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 
+import org.camunda.bpm.engine.IdentityService;
 import org.camunda.bpm.engine.ManagementService;
 import org.camunda.bpm.engine.ProcessEngine;
+import org.camunda.bpm.engine.exception.NullValueException;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.impl.cmd.LicenseCmd;
 import org.camunda.bpm.engine.test.api.resources.GetByteArrayCommand;
@@ -31,25 +33,29 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.RuleChain;
 
 public class LicenseKeyTest {
 
   public ProvidedProcessEngineRule engineRule = new ProvidedProcessEngineRule();
   public ProcessEngineTestRule testRule = new ProcessEngineTestRule(engineRule);
+  public ExpectedException exceptionRule = ExpectedException.none();
 
   @Rule
-  public RuleChain ruleChain = RuleChain.outerRule(testRule).around(engineRule);
+  public RuleChain ruleChain = RuleChain.outerRule(testRule).around(engineRule).around(exceptionRule);
 
   ProcessEngine processEngine;
   ProcessEngineConfigurationImpl processEngineConfiguration;
   ManagementService managementService;
+  IdentityService identityService;
 
   @Before
   public void init() {
     processEngine = engineRule.getProcessEngine();
     processEngineConfiguration = (ProcessEngineConfigurationImpl) processEngine.getProcessEngineConfiguration();
     managementService = processEngine.getManagementService();
+    identityService = processEngine.getIdentityService();
   }
 
   @After
@@ -58,7 +64,7 @@ public class LicenseKeyTest {
   }
 
   @Test
-  public void testSetLicenseKey() {
+  public void shouldSetLicenseKey() {
     // given
     String licenseKey = "testLicenseKey";
 
@@ -79,7 +85,95 @@ public class LicenseKeyTest {
   }
 
   @Test
-  public void testSetDuplicateLicenseKey() {
+  public void shouldGetLicenseKey() {
+    // given
+    String licenseKey = "testLicenseKey";
+
+    // when
+    managementService.setLicenseKey(licenseKey);
+    String storedLicenseKey = managementService.getLicenseKey();
+
+    // then
+    assertThat(storedLicenseKey).isEqualTo(licenseKey);
+  }
+
+  @Test
+  public void shouldGetLegacyLicenseKey() {
+    // given
+    String legacyLicenseKey = "testLegacyLicenseKey";
+    managementService.setProperty(LicenseCmd.LICENSE_KEY_PROPERTY_NAME, legacyLicenseKey);
+
+    // when
+    String storedLegacyLicenseKey = managementService.getLicenseKey();
+
+    // then
+    assertThat(storedLegacyLicenseKey).isEqualTo(legacyLicenseKey);
+  }
+
+  @Test
+  public void shouldGetNullWithNoLicenseKeySet() {
+    // given
+    // no license key
+
+    // when
+    String storedLegacyLicenseKey = managementService.getLicenseKey();
+
+    // then
+    assertThat(storedLegacyLicenseKey).isNull();
+  }
+
+  @Test
+  public void shouldDeleteLicenseKey() {
+    // given
+    String licenseKey = "testLicenseKey";
+
+    // when
+    managementService.setLicenseKey(licenseKey);
+    String licenseByteArrayId = managementService.getProperties().get(LicenseCmd.LICENSE_KEY_BYTE_ARRAY_ID);
+    managementService.deleteLicenseKey();
+    String storedLicenseKey = managementService.getLicenseKey();
+
+    // then
+    // make sure license key is removed
+    assertThat(storedLicenseKey).isNull();
+    assertThat(managementService.getProperties().containsKey(LicenseCmd.LICENSE_KEY_BYTE_ARRAY_ID)).isFalse();
+    assertThat(processEngineConfiguration.getCommandExecutorTxRequired().execute(new GetByteArrayCommand(licenseByteArrayId))).isNull();
+  }
+
+  @Test
+  public void shouldDeleteLegacyLicenseKey() {
+    // given
+    String legacyLicenseKey = "testLegacyLicenseKey";
+    managementService.setProperty(LicenseCmd.LICENSE_KEY_PROPERTY_NAME, legacyLicenseKey);
+
+    // when
+    managementService.deleteLicenseKey();
+    String storedLicenseKey = managementService.getLicenseKey();
+
+    // then
+    // make sure license key is removed
+    assertThat(storedLicenseKey).isNull();
+    assertThat(managementService.getProperties().containsKey(LicenseCmd.LICENSE_KEY_PROPERTY_NAME)).isFalse();
+  }
+
+  @Test
+  public void shouldIgnoreDeleteWithNoLicenseKeySet() {
+    // given
+    // no license key
+    String noLicenseKey = managementService.getLicenseKey();
+
+    // when
+    managementService.deleteLicenseKey();
+    String noLicenseKeyAfterDelete = managementService.getLicenseKey();
+
+    // then
+    // there was never a license key present and no exception was thrown
+    assertThat(noLicenseKey).isNull();
+    assertThat(noLicenseKeyAfterDelete).isNull();
+  }
+
+  @Test
+  public void shouldUpdateLicenseKey() {
     // given
     String licenseKey = "testLicenseKey";
     String licenseKey2 = "testLicenseKey2";
@@ -97,48 +191,7 @@ public class LicenseKeyTest {
   }
 
   @Test
-  public void testGetLicenseKey() {
-    // given
-    String legacyLicenseKey = "testLegacyLicenseKey";
-    String licenseKey = "testLicenseKey";
-    managementService.setProperty(LicenseCmd.LICENSE_KEY_PROPERTY_NAME, legacyLicenseKey);
-
-    // when
-    String storedLegacyLicenseKey = managementService.getLicenseKey();
-    managementService.setLicenseKey(licenseKey);
-    String storedLicenseKey = managementService.getLicenseKey();
-
-    // then
-    assertThat(storedLegacyLicenseKey).isEqualTo(legacyLicenseKey);
-    assertThat(storedLicenseKey).isEqualTo(licenseKey);
-  }
-
-  @Test
-  public void testDeleteLicenseKey() {
-    // given
-    String legacyLicenseKey = "testLegacyLicenseKey";
-    String licenseKey = "testLicenseKey";
-    managementService.setProperty(LicenseCmd.LICENSE_KEY_PROPERTY_NAME, legacyLicenseKey);
-
-    // when
-    managementService.setLicenseKey(licenseKey);
-    String licenseByteArrayId = managementService.getProperties().get(LicenseCmd.LICENSE_KEY_BYTE_ARRAY_ID);
-    byte[] licenseKeyBytes = processEngineConfiguration.getCommandExecutorTxRequired().execute(new GetByteArrayCommand(licenseByteArrayId)).getBytes();
-
-    managementService.deleteLicenseKey();
-
-    // then
-    // make sure license key was stored
-    assertThat(licenseByteArrayId).isNotNull();
-    assertThat(licenseKeyBytes).isNotNull();
-
-    // make sure license key is removed
-    assertThat(managementService.getProperties().containsKey(LicenseCmd.LICENSE_KEY_PROPERTY_NAME)).isFalse();
-    assertThat(processEngineConfiguration.getCommandExecutorTxRequired().execute(new GetByteArrayCommand(licenseByteArrayId))).isNull();
-  }
-
-  @Test
-  public void testUpdateLegacyLicenseKey() {
+  public void shouldUpdateLegacyLicenseKey() {
     // given
     String legacyLicenseKey = "testLegacyLicenseKey";
     String licenseKey = "testLicenseKey";
@@ -160,5 +213,42 @@ public class LicenseKeyTest {
     assertThat(storedByteArrayId).isNotEqualTo(legacyLicenseKey);
     // license is stored in byte array table
     assertThat(licenseBytes).isEqualTo(licenseKey.getBytes());
+  }
+
+  @Test
+  public void shouldUpdateDuplicateLicenseKey() {
+    // given
+    String licenseKey = "testLicenseKey";
+
+    // when
+    managementService.setLicenseKey(licenseKey);
+    String storedLicenseKey = managementService.getLicenseKey();
+    String storedByteArrayId = managementService.getProperties().get(LicenseCmd.LICENSE_KEY_BYTE_ARRAY_ID);
+    managementService.setLicenseKey(licenseKey);
+    String storedLicenseKey2 = managementService.getLicenseKey();
+    String storedByteArrayId2 = managementService.getProperties().get(LicenseCmd.LICENSE_KEY_BYTE_ARRAY_ID);
+
+    // then
+    assertThat(storedLicenseKey).isEqualTo(licenseKey);
+    assertThat(storedLicenseKey2).isEqualTo(licenseKey);
+    assertThat(storedByteArrayId).isNotEqualTo(storedByteArrayId2);
+  }
+
+  @Test
+  public void shouldThrowExceptionWhenSetNullLicenseKey() {
+    // given
+    String licenseKey = null;
+    exceptionRule.expect(NullValueException.class);
+    exceptionRule.expectMessage("licenseKey is null");
+
+    // when
+    String storedLicenseKey = null;
+    try {
+      managementService.setLicenseKey(licenseKey);
+      storedLicenseKey = managementService.getLicenseKey();
+    } finally {
+      // then
+      assertThat(storedLicenseKey).isNull();
+    }
   }
 }

@@ -16,6 +16,8 @@
  */
 package org.camunda.bpm.engine.impl.cmd;
 
+import java.nio.charset.StandardCharsets;
+
 import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.persistence.entity.AuthorizationManager;
@@ -32,7 +34,7 @@ public class GetLicenseKeyCmd extends LicenseCmd implements Command<String> {
     // case I: license is stored as BLOB
     ResourceEntity licenseResource = commandContext.getResourceManager().findLicenseKeyResource();
     if (licenseResource != null) {
-      return new String(licenseResource.getBytes());
+      return new String(licenseResource.getBytes(), StandardCharsets.UTF_8);
     }
 
     // case II: license is stored in properties

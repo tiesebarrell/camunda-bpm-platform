@@ -16,25 +16,25 @@
  */
 package org.camunda.bpm.engine.impl.cmd;
 
+import java.nio.charset.StandardCharsets;
 import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.persistence.entity.AuthorizationManager;
 import org.camunda.bpm.engine.impl.persistence.entity.ResourceEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.ResourceManager;
 import org.camunda.bpm.engine.impl.util.EnsureUtil;
-import org.camunda.bpm.engine.repository.ResourceTypes;
 
 public class SetLicenseKeyCmd extends LicenseCmd implements Command<Object> {
 
-  protected String LicenseKey;
+  protected String licenseKey;
 
   public SetLicenseKeyCmd(final String licenseKey) {
-    this.LicenseKey = licenseKey;
+    this.licenseKey = licenseKey;
   }
 
   @Override
   public Object execute(CommandContext commandContext) {
-    EnsureUtil.ensureNotNull("licenseKey", LicenseKey);
+    EnsureUtil.ensureNotNull("licenseKey", licenseKey);
 
     AuthorizationManager authorizationManager = commandContext.getAuthorizationManager();
     authorizationManager.checkCamundaAdmin();
@@ -46,7 +46,7 @@ public class SetLicenseKeyCmd extends LicenseCmd implements Command<Object> {
     }
     key = new ResourceEntity();
     key.setName(LICENSE_KEY_PROPERTY_NAME);
-    key.setBytes(LicenseKey.getBytes());
+    key.setBytes(licenseKey.getBytes(StandardCharsets.UTF_8));
     // set license key as byte array BLOB
     resourceManager.insertResource(key);
 
