@@ -30,6 +30,7 @@ public class Problem {
   protected String resource;
   protected int line;
   protected int column;
+  protected String[] bpmnElementIds;
 
   public Problem(SAXParseException e, String resource) {
     concatenateErrorMessages(e);

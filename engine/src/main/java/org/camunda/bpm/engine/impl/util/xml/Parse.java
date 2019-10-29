@@ -233,7 +233,7 @@ public class Parse extends DefaultHandler {
       strb.append("\n* ");
       strb.append(error.toString());
     }
-    throw LOG.exceptionDuringParsing(strb.toString());
+    throw LOG.exceptionDuringParsing(strb.toString(), errors, warnings);
   }
 
   public void setSchemaResource(String schemaResource) {
