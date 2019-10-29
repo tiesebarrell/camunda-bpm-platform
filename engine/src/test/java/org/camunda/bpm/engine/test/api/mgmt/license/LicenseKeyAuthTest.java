@@ -60,6 +60,7 @@ public class LicenseKeyAuthTest {
   @After
   public void tearDown() {
     processEngineConfiguration.setAuthorizationEnabled(false);
+    identityService.clearAuthentication();
   }
 
   @Test
