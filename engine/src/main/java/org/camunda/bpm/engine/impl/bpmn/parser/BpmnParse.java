@@ -1505,6 +1505,7 @@ public class BpmnParse extends Parse {
     Element linkEventDefinitionElement = intermediateEventElement.element(LINK_EVENT_DEFINITION);
     Element messageEventDefinitionElement = intermediateEventElement.element(MESSAGE_EVENT_DEFINITION);
     Element escalationEventDefinition = intermediateEventElement.element(ESCALATION_EVENT_DEFINITION);
+    String elementId = intermediateEventElement.attribute("id");
 
     // the link event gets a special treatment as a throwing link event (event
     // source)
@@ -1513,7 +1514,6 @@ public class BpmnParse extends Parse {
     // event (event target)
     if (linkEventDefinitionElement != null) {
       String linkName = linkEventDefinitionElement.attribute("name");
-      String elementId = intermediateEventElement.attribute("id");
 
       // now we remember the link in order to replace the sequence flow later on
       eventLinkSources.put(elementId, linkName);
@@ -1533,7 +1533,7 @@ public class BpmnParse extends Parse {
       activityBehavior = new ThrowSignalEventActivityBehavior(signalDefinition);
     } else if (compensateEventDefinitionElement != null) {
       nestedActivityImpl.getProperties().set(BpmnProperties.TYPE, ActivityTypes.INTERMEDIATE_EVENT_COMPENSATION_THROW);
-      CompensateEventDefinition compensateEventDefinition = parseThrowCompensateEventDefinition(compensateEventDefinitionElement, scopeElement);
+      CompensateEventDefinition compensateEventDefinition = parseThrowCompensateEventDefinition(compensateEventDefinitionElement, scopeElement, elementId);
       activityBehavior = new CompensationEventActivityBehavior(compensateEventDefinition);
       nestedActivityImpl.setProperty(PROPERTYNAME_THROWS_COMPENSATION, true);
       nestedActivityImpl.setScope(true);
@@ -1575,7 +1575,7 @@ public class BpmnParse extends Parse {
     return nestedActivityImpl;
   }
 
-  protected CompensateEventDefinition parseThrowCompensateEventDefinition(final Element compensateEventDefinitionElement, ScopeImpl scopeElement) {
+  protected CompensateEventDefinition parseThrowCompensateEventDefinition(final Element compensateEventDefinitionElement, ScopeImpl scopeElement, final String parentElementId) {
     final String activityRef = compensateEventDefinitionElement.attribute("activityRef");
     boolean waitForCompletion = TRUE.equals(compensateEventDefinitionElement.attribute("waitForCompletion", TRUE));
 
@@ -1593,7 +1593,7 @@ public class BpmnParse extends Parse {
             @Override
             public void callback() {
               addError("Invalid attribute value for 'activityRef': no activity with id '" + activityRef + "' in scope '" + scopeId + "'",
-              compensateEventDefinitionElement);
+              compensateEventDefinitionElement, parentElementId);
             }
           });
         }
@@ -1607,7 +1607,7 @@ public class BpmnParse extends Parse {
     if (!waitForCompletion) {
       addWarning(
           "Unsupported attribute value for 'waitForCompletion': 'waitForCompletion=false' is not supported. Compensation event will wait for compensation to join.",
-          compensateEventDefinitionElement);
+          compensateEventDefinitionElement, parentElementId);
     }
 
     return compensateEventDefinition;
@@ -2957,7 +2957,8 @@ public class BpmnParse extends Parse {
 
       } else if (compensateEventDefinitionElement != null) {
         activity.getProperties().set(BpmnProperties.TYPE, ActivityTypes.END_EVENT_COMPENSATION);
-        CompensateEventDefinition compensateEventDefinition = parseThrowCompensateEventDefinition(compensateEventDefinitionElement, scope);
+        
+        CompensateEventDefinition compensateEventDefinition = parseThrowCompensateEventDefinition(compensateEventDefinitionElement, scope, endEventElement.attribute("id"));
         activity.setActivityBehavior(new CompensationEventActivityBehavior(compensateEventDefinition));
         activity.setProperty(PROPERTYNAME_THROWS_COMPENSATION, true);
         activity.setScope(true);
@@ -3816,7 +3817,7 @@ public class BpmnParse extends Parse {
 
         } else {
 
-          CallableElementParameter parameter = parseCallableElementProvider(inElement);
+          CallableElementParameter parameter = parseCallableElementProvider(inElement, elementWithParameters.attribute("id"));
 
           if (attributeValueEquals(inElement, "local", TRUE)) {
             parameter.setReadLocal(true);
@@ -3835,7 +3836,7 @@ public class BpmnParse extends Parse {
       // output data elements
       for (Element outElement : extensionsElement.elementsNS(CAMUNDA_BPMN_EXTENSIONS_NS, "out")) {
 
-        CallableElementParameter parameter = parseCallableElementProvider(outElement);
+        CallableElementParameter parameter = parseCallableElementProvider(outElement, callActivityElement.attribute("id"));
 
         if (attributeValueEquals(outElement, "local", TRUE)) {
           callableElement.addOutputLocal(parameter);
@@ -3854,7 +3855,7 @@ public class BpmnParse extends Parse {
     return comparisonValue.equals(value);
   }
 
-  protected CallableElementParameter parseCallableElementProvider(Element parameterElement) {
+  protected CallableElementParameter parseCallableElementProvider(Element parameterElement, String ancestorElementId) {
     CallableElementParameter parameter = new CallableElementParameter();
 
     String variables = parameterElement.attribute("variables");
@@ -3873,7 +3874,7 @@ public class BpmnParse extends Parse {
         }
         else {
           if (strictValidation) {
-            addError("Empty attribute 'source' when passing variables", parameterElement);
+            addError("Empty attribute 'source' when passing variables", parameterElement, ancestorElementId);
           }
           else {
             source = null;
@@ -3890,23 +3891,23 @@ public class BpmnParse extends Parse {
             sourceValueProvider = new ElValueProvider(expression);
           }
           else if (strictValidation) {
-            addError("Empty attribute 'sourceExpression' when passing variables", parameterElement);
+            addError("Empty attribute 'sourceExpression' when passing variables", parameterElement, ancestorElementId);
           }
         }
       }
 
       if (strictValidation && source == null) {
-        addError("Missing parameter 'source' or 'sourceExpression' when passing variables", parameterElement);
+        addError("Missing parameter 'source' or 'sourceExpression' when passing variables", parameterElement, ancestorElementId);
       }
 
       parameter.setSourceValueProvider(sourceValueProvider);
 
       String target = parameterElement.attribute("target");
       if ((strictValidation || source != null && !source.isEmpty()) && target == null) {
-        addError("Missing attribute 'target' when attribute 'source' or 'sourceExpression' is set", parameterElement);
+        addError("Missing attribute 'target' when attribute 'source' or 'sourceExpression' is set", parameterElement, ancestorElementId);
       }
       else if (strictValidation && target != null && target.isEmpty()) {
-        addError("Empty attribute 'target' when attribute 'source' or 'sourceExpression' is set", parameterElement);
+        addError("Empty attribute 'target' when attribute 'source' or 'sourceExpression' is set", parameterElement, ancestorElementId);
       }
       parameter.setTarget(target);
     }

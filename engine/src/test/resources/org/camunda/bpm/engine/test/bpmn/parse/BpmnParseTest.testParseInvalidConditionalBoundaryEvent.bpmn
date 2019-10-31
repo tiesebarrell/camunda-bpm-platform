@@ -19,7 +19,7 @@
     <bpmn:sequenceFlow id="SequenceFlow_16rgc71" sourceRef="conditionalBoundaryEvent" targetRef="EndEvent_0oxxgej" />
     <bpmn:boundaryEvent id="conditionalBoundaryEvent" attachedToRef="Task_1dnwf0r">
       <bpmn:outgoing>SequenceFlow_16rgc71</bpmn:outgoing>
-      <bpmn:conditionalEventDefinition/>
+      <bpmn:conditionalEventDefinition id="conditionalEventDefinition"/>
     </bpmn:boundaryEvent>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
