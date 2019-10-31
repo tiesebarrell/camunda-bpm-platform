@@ -1071,7 +1071,7 @@ public class BpmnParse extends Parse {
         addError("messageEventDefinition only allowed on start event if subprocess is an event subprocess", messageEventDefinition);
       }
       if (signalEventDefinition != null) {
-        addError("signalEventDefintion only allowed on start event if subprocess is an event subprocess", messageEventDefinition);
+        addError("signalEventDefintion only allowed on start event if subprocess is an event subprocess", signalEventDefinition);
       }
 
       startEventActivity.setActivityBehavior(new NoneStartEventActivityBehavior());
