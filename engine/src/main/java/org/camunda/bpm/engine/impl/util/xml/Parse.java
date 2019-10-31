@@ -61,8 +61,8 @@ public class Parse extends DefaultHandler {
   protected String name;
   protected StreamSource streamSource;
   protected Element rootElement = null;
-  protected List<ProblemImpl> errors = new ArrayList<>();
-  protected List<ProblemImpl> warnings = new ArrayList<>();
+  protected List<Problem> errors = new ArrayList<>();
+  protected List<Problem> warnings = new ArrayList<>();
   protected String schemaResource;
   protected boolean enableXxeProcessing = true;
 
@@ -161,6 +161,7 @@ public class Parse extends DefaultHandler {
       }
       saxParser.parse(inputStream, new ParseHandler(this));
     } catch (Exception e) {
+//      addError(e.getMessage(), null);
       throw LOG.parsingFailureException(name, e);
     }
 
@@ -188,7 +189,7 @@ public class Parse extends DefaultHandler {
     return rootElement;
   }
 
-  public List<ProblemImpl> getProblems() {
+  public List<Problem> getProblems() {
     return errors;
   }
 
@@ -196,8 +197,8 @@ public class Parse extends DefaultHandler {
     errors.add(new ProblemImpl(e, name));
   }
 
-  public void addError(String errorMessage, Element element) {
-    errors.add(new ProblemImpl(errorMessage, name, element));
+  public void addError(String errorMessage, Element element, String... elementIds) {
+    errors.add(new ProblemImpl(errorMessage, name, element, elementIds));
   }
 
   public void addError(BpmnParseException e) {
@@ -212,8 +213,8 @@ public class Parse extends DefaultHandler {
     warnings.add(new ProblemImpl(e, name));
   }
 
-  public void addWarning(String errorMessage, Element element) {
-    warnings.add(new ProblemImpl(errorMessage, name, element));
+  public void addWarning(String errorMessage, Element element, String... elementIds) {
+    warnings.add(new ProblemImpl(errorMessage, name, element, elementIds));
   }
 
   public boolean hasWarnings() {

@@ -18,26 +18,24 @@ package org.camunda.bpm.engine;
 
 import java.util.List;
 
-import org.camunda.bpm.engine.impl.xml.ProblemImpl;
-
 public class ParseException extends ProcessEngineException {
 
   private static final long serialVersionUID = 1L;
 
-  protected List<ProblemImpl> errors;
-  protected List<ProblemImpl> warnings;
+  protected List<Problem> errors;
+  protected List<Problem> warnings;
 
-  public ParseException(String exceptionMessage, List<ProblemImpl> errors, List<ProblemImpl> warnings) {
+  public ParseException(String exceptionMessage, List<Problem> errors, List<Problem> warnings) {
     super(exceptionMessage);
     this.errors = errors;
     this.warnings = warnings;
   }
 
-  public List<ProblemImpl> getErrors() {
+  public List<Problem> getErrors() {
     return errors;
   }
 
-  public List<ProblemImpl> getWarnings() {
+  public List<Problem> getWarnings() {
     return warnings;
   }
 }

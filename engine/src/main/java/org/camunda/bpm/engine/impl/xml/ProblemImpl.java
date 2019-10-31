@@ -16,6 +16,9 @@
  */
 package org.camunda.bpm.engine.impl.xml;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.camunda.bpm.engine.BpmnParseException;
 import org.camunda.bpm.engine.Problem;
 import org.camunda.bpm.engine.impl.util.xml.Element;
@@ -42,7 +45,20 @@ public class ProblemImpl implements Problem {
   }
 
   
-  public ProblemImpl(String errorMessage, String resourceName, Element element) {
+//  public ProblemImpl(String errorMessage, String resourceName, Element element) {
+//    this.errorMessage = errorMessage;
+//    this.resource = resourceName;
+//    if (element!=null) {
+//      this.line = element.getLine();
+//      this.column = element.getColumn();
+//      String id = element.attribute("id");
+//      if (id != null && id.length() > 0) {
+//        this.bpmnElementIds = new String[]{id};
+//      }
+//    }
+//  }
+
+  public ProblemImpl(String errorMessage, String resourceName, Element element, String... bpmnElementIds) {
     this.errorMessage = errorMessage;
     this.resource = resourceName;
     if (element!=null) {
@@ -53,16 +69,13 @@ public class ProblemImpl implements Problem {
         this.bpmnElementIds = new String[]{id};
       }
     }
-  }
-
-  public ProblemImpl(String errorMessage, String resourceName, Element element, String... bpmnElementIds) {
-    this.errorMessage = errorMessage;
-    this.resource = resourceName;
-    if (element!=null) {
-      this.line = element.getLine();
-      this.column = element.getColumn();
+    if (bpmnElementIds != null && bpmnElementIds.length > 0) {
+      List<String> ids = Arrays.asList(bpmnElementIds);
+      if (this.bpmnElementIds != null && this.bpmnElementIds.length > 0) {
+        ids.addAll(Arrays.asList(this.bpmnElementIds));
+      }
+      this.bpmnElementIds = ids.toArray(new String[0]);
     }
-    this.bpmnElementIds = bpmnElementIds;
   }
 
   public ProblemImpl(BpmnParseException exception, String resourceName) {
@@ -72,6 +85,10 @@ public class ProblemImpl implements Problem {
     if (element != null) {
       this.line = element.getLine();
       this.column = element.getColumn();
+      String id = element.attribute("id");
+      if (id != null && id.length() > 0) {
+        this.bpmnElementIds = new String[]{id};
+      }
     }
   }
 
@@ -114,7 +131,23 @@ public class ProblemImpl implements Problem {
     return bpmnElementIds;
   }
 
-  public String toString() {
-    return errorMessage+(resource!=null ? " | "+resource : "")+" | line "+line+" | column "+column;
+  public String toString() { // TODO revert
+    StringBuilder string = new StringBuilder(errorMessage); 
+    if (resource != null) {
+      string.append(" | " + resource);
+    }
+    if (line > 0) {
+      string.append(" | line " + line);
+    }
+    if (column > 0) {
+      string.append(" | column " + column);
+    }
+    if (bpmnElementIds != null && bpmnElementIds.length > 0) {
+      for (String elementId : bpmnElementIds) {
+        string.append(" | element ");
+        string.append(elementId);
+      }
+    }
+    return string.toString();
   }
 }
